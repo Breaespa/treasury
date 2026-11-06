@@ -1,0 +1,12 @@
+# Cloudflare Environment Variables Example
+# Copy this file to .dev.vars and fill in your values
+# DO NOT commit .dev.vars to version control
+
+# Session timeout in seconds (default: 3600 = 1 hour)
+SESSION_TIMEOUT=3600
+
+# D1 Database ID (optional for local development)
+# Set this to your production D1 database ID for remote deployment
+# YOUR_D1_DATABASE_ID=your-database-id-here
+
+# Other application settings can be added here

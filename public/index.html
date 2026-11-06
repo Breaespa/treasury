@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Platform - Independent Demonstration Application</title>
+  <link rel="icon" href="/images/icon.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-800">
+  <!-- Disclaimer Banner -->
+  <div class="bg-amber-100 border-b border-amber-200">
+    <div class="max-w-6xl mx-auto px-6 py-2 text-center">
+      <p class="text-xs text-amber-800">
+        <strong>Independent demonstration application.</strong> Not affiliated with or endorsed by any government agency or financial institution. All records and transactions displayed are fictional.
+      </p>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="border-b border-gray-200 bg-white">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center">
+        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+          <span class="text-white font-bold text-xl">DP</span>
+        </div>
+        <h1 class="text-2xl font-semibold text-blue-700">Demo Platform</h1>
+      </div>
+      <a href="/admin/" class="text-sm text-blue-600 hover:text-blue-800">Admin Portal</a>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-6xl mx-auto px-6 py-8">
+    <div class="flex items-end justify-between gap-4 flex-wrap mb-6">
+      <div>
+        <h2 class="text-xl font-semibold text-blue-700">Demo Records</h2>
+        <p class="text-sm text-gray-500 mt-1">Browse fictional demonstration records</p>
+      </div>
+      <form id="searchForm" class="flex items-center gap-2">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search by name or email"
+          class="border border-gray-300 rounded px-3 py-2 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+        <select id="statusFilter" class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">All Status</option>
+          <option value="Paid">Paid</option>
+          <option value="Pending">Pending</option>
+          <option value="Overdue">Overdue</option>
+        </select>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors">
+          Filter
+        </button>
+      </form>
+    </div>
+
+    <!-- Records Grid -->
+    <div id="recordsGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Records will be loaded here -->
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-12 hidden">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p class="text-sm text-gray-500 mt-2">Loading records...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-12 hidden">
+      <p class="text-sm text-gray-500">No records found.</p>
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="flex items-center justify-center gap-2 mt-8 hidden">
+      <button id="prevPage" class="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+        Previous
+      </button>
+      <span id="pageInfo" class="text-sm text-gray-600"></span>
+      <button id="nextPage" class="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+        Next
+      </button>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center py-6 text-xs text-gray-500 border-t border-gray-200 mt-12">
+    <p>&copy; <span id="currentYear"></span> Demo Platform. Independent demonstration application.</p>
+  </footer>
+
+  <script>
+    // State
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentSearch = '';
+    let currentStatus = '';
+
+    // DOM Elements
+    const recordsGrid = document.getElementById('recordsGrid');
+    const loadingState = document.getElementById('loadingState');
+    const emptyState = document.getElementById('emptyState');
+    const pagination = document.getElementById('pagination');
+    const searchForm = document.getElementById('searchForm');
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
+
+    // Set current year
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+    // Load records
+    async function loadRecords() {
+      recordsGrid.innerHTML = '';
+      loadingState.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+      pagination.classList.add('hidden');
+
+      try {
+        const params = new URLSearchParams({
+          page: currentPage,
+          limit: 12
+        });
+
+        if (currentSearch) params.append('q', currentSearch);
+        if (currentStatus) params.append('status', currentStatus);
+
+        const response = await fetch(`/api/entries?${params}`);
+        const data = await response.json();
+
+        loadingState.classList.add('hidden');
+
+        if (data.entries.length === 0) {
+          emptyState.classList.remove('hidden');
+          return;
+        }
+
+        totalPages = data.pagination.totalPages;
+
+        data.entries.forEach(entry => {
+          const card = document.createElement('a');
+          card.href = `/profile.html?slug=${entry.slug}`;
+          card.className = 'block border border-gray-200 rounded-lg p-4 hover:shadow transition-shadow';
+
+          const badgeClass = entry.current_status === 'Paid'
+            ? 'bg-green-100 text-green-800'
+            : entry.current_status === 'Pending'
+            ? 'bg-yellow-100 text-yellow-800'
+            : 'bg-red-100 text-red-800';
+
+          const imageUrl = entry.image_key ? `/api/images/${entry.image_key}` : '/images/default.svg';
+
+          card.innerHTML = `
+            <div class="flex items-center gap-4">
+              <img src="${imageUrl}" alt="" class="h-14 w-14 rounded object-cover bg-gray-100">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-gray-900 truncate">${escapeHtml(entry.name)}</h3>
+                <p class="text-sm text-gray-600 truncate">${escapeHtml(entry.email || 'No email')}</p>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center justify-between">
+              <span class="text-sm font-medium">
+                Amount: <span class="text-gray-900">$${parseFloat(entry.illustrative_amount).toFixed(2)}</span>
+              </span>
+              <span class="text-xs px-2 py-1 rounded ${badgeClass}">${escapeHtml(entry.current_status)}</span>
+            </div>
+          `;
+
+          recordsGrid.appendChild(card);
+        });
+
+        if (totalPages > 1) {
+          pagination.classList.remove('hidden');
+          pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+          prevPageBtn.disabled = currentPage === 1;
+          nextPageBtn.disabled = currentPage === totalPages;
+        }
+      } catch (error) {
+        console.error('Error loading records:', error);
+        loadingState.classList.add('hidden');
+        emptyState.innerHTML = '<p class="text-sm text-red-500">Error loading records. Please try again.</p>';
+        emptyState.classList.remove('hidden');
+      }
+    }
+
+    // Search form submission
+    searchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      currentSearch = searchInput.value.trim();
+      currentStatus = statusFilter.value;
+      currentPage = 1;
+      loadRecords();
+    });
+
+    // Pagination
+    prevPageBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        loadRecords();
+      }
+    });
+
+    nextPageBtn.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        loadRecords();
+      }
+    });
+
+    // Escape HTML helper
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initial load
+    loadRecords();
+  </script>
+</body>
+</html>

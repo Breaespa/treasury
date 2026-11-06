@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Logs - Demo Platform</title>
+  <link rel="icon" href="/images/icon.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center">
+        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+          <span class="text-white font-bold text-xl">DP</span>
+        </div>
+        <div>
+          <h1 class="text-xl font-semibold text-gray-900">Audit Logs</h1>
+          <p class="text-sm text-gray-500">Demo Platform Administration</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="welcomeUser" class="text-sm text-gray-600"></span>
+        <button id="logoutBtn" class="text-sm text-red-600 hover:text-red-800">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex gap-6">
+        <a href="/admin/dashboard.html" class="py-3 text-sm font-medium text-gray-600 hover:text-gray-900">Dashboard</a>
+        <a href="/admin/entries.html" class="py-3 text-sm font-medium text-gray-600 hover:text-gray-900">Entries</a>
+        <a href="/admin/audit-logs.html" class="py-3 text-sm font-medium text-blue-600 border-b-2 border-blue-600">Audit Logs</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Logs Table -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="p-3 text-left font-medium">ID</th>
+              <th class="p-3 text-left font-medium">Action</th>
+              <th class="p-3 text-left font-medium">Entity</th>
+              <th class="p-3 text-left font-medium">Description</th>
+              <th class="p-3 text-left font-medium">User</th>
+              <th class="p-3 text-left font-medium">IP Address</th>
+              <th class="p-3 text-left font-medium">Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="logsTable">
+            <!-- Logs will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingState" class="text-center py-12 hidden">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p class="text-sm text-gray-500 mt-2">Loading logs...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="text-center py-12 hidden">
+        <p class="text-sm text-gray-500">No audit logs found.</p>
+      </div>
+
+      <!-- Pagination -->
+      <div id="pagination" class="px-6 py-4 border-t border-gray-200 flex items-center justify-between hidden">
+        <span id="pageInfo" class="text-sm text-gray-600"></span>
+        <div class="flex gap-2">
+          <button id="prevPage" class="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            Previous
+          </button>
+          <button id="nextPage" class="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // State
+    let currentPage = 1;
+    let totalPages = 1;
+
+    // DOM Elements
+    const logsTable = document.getElementById('logsTable');
+    const loadingState = document.getElementById('loadingState');
+    const emptyState = document.getElementById('emptyState');
+    const pagination = document.getElementById('pagination');
+
+    // Check authentication
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/admin/session');
+        const data = await response.json();
+
+        if (!data.authenticated) {
+          window.location.href = '/admin/login.html';
+          return false;
+        }
+
+        document.getElementById('welcomeUser').textContent = `Welcome, ${data.user.username}`;
+        return true;
+      } catch (error) {
+        console.error('Auth check error:', error);
+        window.location.href = '/admin/login.html';
+        return false;
+      }
+    }
+
+    // Load logs
+    async function loadLogs() {
+      logsTable.innerHTML = '';
+      loadingState.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+      pagination.classList.add('hidden');
+
+      try {
+        const params = new URLSearchParams({
+          page: currentPage,
+          limit: 50
+        });
+
+        const response = await fetch(`/api/admin/audit-logs?${params}`);
+        const data = await response.json();
+
+        loadingState.classList.add('hidden');
+
+        if (data.logs.length === 0) {
+          emptyState.classList.remove('hidden');
+          return;
+        }
+
+        totalPages = data.pagination.totalPages;
+
+        data.logs.forEach(log => {
+          const row = document.createElement('tr');
+          row.className = 'border-t border-gray-200 hover:bg-gray-50';
+
+          const actionBadge = getActionBadge(log.action);
+
+          row.innerHTML = `
+            <td class="p-3">${log.id}</td>
+            <td class="p-3">${actionBadge}</td>
+            <td class="p-3 font-mono text-xs">${escapeHtml(log.entity_type)}</td>
+            <td class="p-3 max-w-xs truncate">${escapeHtml(log.description || '—')}</td>
+            <td class="p-3">${escapeHtml(log.username)}</td>
+            <td class="p-3 font-mono text-xs">${escapeHtml(log.ip_address || '—')}</td>
+            <td class="p-3 text-xs">${new Date(log.created_at).toLocaleString()}</td>
+          `;
+
+          logsTable.appendChild(row);
+        });
+
+        if (totalPages > 1) {
+          pagination.classList.remove('hidden');
+          document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+          document.getElementById('prevPage').disabled = currentPage === 1;
+          document.getElementById('nextPage').disabled = currentPage === totalPages;
+        }
+      } catch (error) {
+        console.error('Error loading logs:', error);
+        loadingState.classList.add('hidden');
+        emptyState.innerHTML = '<p class="text-sm text-red-500">Error loading logs. Please try again.</p>';
+        emptyState.classList.remove('hidden');
+      }
+    }
+
+    // Get action badge
+    function getActionBadge(action) {
+      const badges = {
+        'CREATE': '<span class="text-xs px-2 py-1 rounded bg-green-100 text-green-800">CREATE</span>',
+        'UPDATE': '<span class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">UPDATE</span>',
+        'DELETE': '<span class="text-xs px-2 py-1 rounded bg-red-100 text-red-800">DELETE</span>',
+        'LOGIN': '<span class="text-xs px-2 py-1 rounded bg-purple-100 text-purple-800">LOGIN</span>',
+        'LOGOUT': '<span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-800">LOGOUT</span>',
+        'UPLOAD': '<span class="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800">UPLOAD</span>',
+        'INITIAL_SETUP': '<span class="text-xs px-2 py-1 rounded bg-indigo-100 text-indigo-800">SETUP</span>'
+      };
+      return badges[action] || `<span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-800">${escapeHtml(action)}</span>`;
+    }
+
+    // Pagination
+    document.getElementById('prevPage').addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        loadLogs();
+      }
+    });
+
+    document.getElementById('nextPage').addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        loadLogs();
+      }
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        await fetch('/api/admin/logout', { method: 'POST' });
+        window.location.href = '/admin/login.html';
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    });
+
+    // Escape HTML helper
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initialize
+    if (await checkAuth()) {
+      loadLogs();
+    }
+  </script>
+</body>
+</html>

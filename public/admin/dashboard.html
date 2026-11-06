@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Demo Platform</title>
+  <link rel="icon" href="/images/icon.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center">
+        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+          <span class="text-white font-bold text-xl">DP</span>
+        </div>
+        <div>
+          <h1 class="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
+          <p class="text-sm text-gray-500">Demo Platform Administration</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="welcomeUser" class="text-sm text-gray-600"></span>
+        <button id="logoutBtn" class="text-sm text-red-600 hover:text-red-800">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex gap-6">
+        <a href="/admin/dashboard.html" class="py-3 text-sm font-medium text-blue-600 border-b-2 border-blue-600">Dashboard</a>
+        <a href="/admin/entries.html" class="py-3 text-sm font-medium text-gray-600 hover:text-gray-900">Entries</a>
+        <a href="/admin/audit-logs.html" class="py-3 text-sm font-medium text-gray-600 hover:text-gray-900">Audit Logs</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <h3 class="text-sm font-medium text-gray-500">Total Entries</h3>
+        <p id="totalEntries" class="text-3xl font-semibold text-gray-900 mt-2">—</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <h3 class="text-sm font-medium text-gray-500">Paid Entries</h3>
+        <p id="paidEntries" class="text-3xl font-semibold text-green-600 mt-2">—</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <h3 class="text-sm font-medium text-gray-500">Pending Entries</h3>
+        <p id="pendingEntries" class="text-3xl font-semibold text-yellow-600 mt-2">—</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <h3 class="text-sm font-medium text-gray-500">Total Amount</h3>
+        <p id="totalAmount" class="text-3xl font-semibold text-blue-600 mt-2">—</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Recent Entries -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900">Recent Entries</h2>
+        </div>
+        <div id="recentEntries" class="p-6">
+          <!-- Entries will be loaded here -->
+        </div>
+      </div>
+
+      <!-- Recent Audit Logs -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
+        </div>
+        <div id="recentLogs" class="p-6">
+          <!-- Logs will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Check authentication
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/admin/session');
+        const data = await response.json();
+
+        if (!data.authenticated) {
+          window.location.href = '/admin/login.html';
+          return false;
+        }
+
+        document.getElementById('welcomeUser').textContent = `Welcome, ${data.user.username}`;
+        return true;
+      } catch (error) {
+        console.error('Auth check error:', error);
+        window.location.href = '/admin/login.html';
+        return false;
+      }
+    }
+
+    // Load dashboard data
+    async function loadDashboard() {
+      try {
+        const response = await fetch('/api/admin/dashboard');
+        const data = await response.json();
+
+        // Update statistics
+        document.getElementById('totalEntries').textContent = data.statistics.total_entries;
+        document.getElementById('paidEntries').textContent = data.statistics.paid_entries;
+        document.getElementById('pendingEntries').textContent = data.statistics.pending_entries;
+        document.getElementById('totalAmount').textContent = `$${parseFloat(data.statistics.total_amount).toLocaleString()}`;
+
+        // Load recent entries
+        const recentEntriesDiv = document.getElementById('recentEntries');
+        if (data.recent_entries.length === 0) {
+          recentEntriesDiv.innerHTML = '<p class="text-sm text-gray-500">No entries yet.</p>';
+        } else {
+          recentEntriesDiv.innerHTML = data.recent_entries.map(entry => `
+            <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+              <div>
+                <p class="text-sm font-medium text-gray-900">${escapeHtml(entry.name)}</p>
+                <p class="text-xs text-gray-500">${new Date(entry.created_at).toLocaleDateString()}</p>
+              </div>
+              <span class="text-sm ${entry.current_status === 'Paid' ? 'text-green-600' : entry.current_status === 'Pending' ? 'text-yellow-600' : 'text-red-600'}">${escapeHtml(entry.current_status)}</span>
+            </div>
+          `).join('');
+        }
+
+        // Load recent logs
+        const recentLogsDiv = document.getElementById('recentLogs');
+        if (data.recent_logs.length === 0) {
+          recentLogsDiv.innerHTML = '<p class="text-sm text-gray-500">No activity yet.</p>';
+        } else {
+          recentLogsDiv.innerHTML = data.recent_logs.map(log => `
+            <div class="py-2 border-b border-gray-100 last:border-0">
+              <p class="text-sm font-medium text-gray-900">${escapeHtml(log.action)} - ${escapeHtml(log.entity_type)}</p>
+              <p class="text-xs text-gray-500">${log.username} • ${new Date(log.created_at).toLocaleString()}</p>
+              ${log.description ? `<p class="text-xs text-gray-600 mt-1">${escapeHtml(log.description)}</p>` : ''}
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Dashboard load error:', error);
+      }
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        await fetch('/api/admin/logout', { method: 'POST' });
+        window.location.href = '/admin/login.html';
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    });
+
+    // Escape HTML helper
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initialize
+    if (await checkAuth()) {
+      loadDashboard();
+    }
+  </script>
+</body>
+</html>

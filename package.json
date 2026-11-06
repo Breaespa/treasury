@@ -1,0 +1,27 @@
+{
+  "name": "demo-platform",
+  "version": "1.0.0",
+  "description": "Independent demonstration application for Cloudflare Pages + D1 + R2",
+  "scripts": {
+    "dev": "wrangler pages dev public --d1 DB=local --r2 R2=local",
+    "deploy": "wrangler pages deploy",
+    "db:create": "wrangler d1 create demo-platform-db",
+    "db:migrate": "wrangler d1 execute demo-platform-db --local --file=migrations/0001_initial_schema.sql && wrangler d1 execute demo-platform-db --local --file=migrations/0003_admin_sessions.sql",
+    "db:seed": "wrangler d1 execute demo-platform-db --local --file=migrations/0002_seed_data.sql",
+    "db:remote:migrate": "wrangler d1 execute demo-platform-db --file=migrations/0001_initial_schema.sql && wrangler d1 execute demo-platform-db --file=migrations/0003_admin_sessions.sql",
+    "db:remote:seed": "wrangler d1 execute demo-platform-db --file=migrations/0002_seed_data.sql",
+    "r2:create": "wrangler r2 bucket create demo-platform-assets"
+  },
+  "keywords": [
+    "cloudflare",
+    "pages",
+    "d1",
+    "r2",
+    "demo"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

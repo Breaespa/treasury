@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Initial Setup - Demo Platform</title>
+  <link rel="icon" href="/images/icon.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex items-center justify-center">
+  <div class="max-w-md w-full mx-4">
+    <!-- Logo and Title -->
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+        <span class="text-white font-bold text-3xl">DP</span>
+      </div>
+      <h1 class="text-2xl font-semibold text-gray-900">Initial Setup</h1>
+      <p class="text-sm text-gray-500 mt-1">Create your admin account</p>
+    </div>
+
+    <!-- Setup Form -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <form id="setupForm">
+        <div class="space-y-4">
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              required
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Choose a username"
+            >
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              minlength="8"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Choose a strong password (min 8 characters)"
+            >
+          </div>
+
+          <div>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              required
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Confirm your password"
+            >
+          </div>
+
+          <div id="errorMessage" class="hidden bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded text-sm"></div>
+
+          <button
+            type="submit"
+            id="submitBtn"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Create Admin Account
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
+        <p class="text-xs text-blue-800">
+          <strong>Important:</strong> This setup process can only be run once. After creating your admin account, this page will be disabled. Make sure to choose a strong password and remember it.
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="text-center text-xs text-gray-500 mt-8">
+      Demo Platform - Independent Demonstration Application
+    </p>
+  </div>
+
+  <script>
+    const setupForm = document.getElementById('setupForm');
+    const errorMessage = document.getElementById('errorMessage');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Handle setup
+    setupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      // Validate passwords match
+      if (password !== confirmPassword) {
+        errorMessage.textContent = 'Passwords do not match';
+        errorMessage.classList.remove('hidden');
+        return;
+      }
+
+      errorMessage.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating account...';
+
+      try {
+        const response = await fetch('/api/admin/setup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Setup successful, redirect to login
+          alert('Admin account created successfully! Please login.');
+          window.location.href = '/admin/login.html';
+        } else {
+          // Setup failed
+          errorMessage.textContent = data.error || 'Setup failed';
+          errorMessage.classList.remove('hidden');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Admin Account';
+
+          // If admin already exists, redirect to login
+          if (data.error === 'Admin user already exists') {
+            alert('An admin account already exists. Redirecting to login...');
+            window.location.href = '/admin/login.html';
+          }
+        }
+      } catch (error) {
+        console.error('Setup error:', error);
+        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Admin Account';
+      }
+    });
+  </script>
+</body>
+</html>

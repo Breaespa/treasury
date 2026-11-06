@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Platform - Record Details</title>
+  <link rel="icon" href="/images/icon.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-900">
+  <!-- Disclaimer Banner -->
+  <div class="bg-amber-100 border-b border-amber-200">
+    <div class="max-w-6xl mx-auto px-6 py-2 text-center">
+      <p class="text-xs text-amber-800">
+        <strong>Independent demonstration application.</strong> Not affiliated with or endorsed by any government agency or financial institution. All records and transactions displayed are fictional.
+      </p>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-blue-700 text-white shadow">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center">
+      <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center mr-3">
+        <span class="text-blue-700 font-bold text-xl">DP</span>
+      </div>
+      <div>
+        <h1 class="text-2xl font-semibold">Demo Platform</h1>
+        <p class="text-sm text-blue-200">Independent Demonstration Application</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sub-header -->
+  <section class="bg-blue-900 text-blue-100">
+    <div class="max-w-6xl mx-auto px-6 py-3">
+      <h2 class="text-lg font-medium">Demo Record Details</h2>
+      <p id="recordName" class="text-sm mt-1 text-blue-200">Loading...</p>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <main class="max-w-6xl mx-auto px-6 py-10">
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p class="text-sm text-gray-500 mt-2">Loading record...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="hidden">
+      <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+        <p class="font-medium">Record not found.</p>
+        <a href="/" class="text-sm text-red-600 underline mt-2 inline-block">Return to homepage</a>
+      </div>
+    </div>
+
+    <!-- Record Content -->
+    <div id="recordContent" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Section -->
+        <section class="lg:col-span-2 space-y-6">
+          <article class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div class="p-6 flex flex-col sm:flex-row gap-6">
+              <div class="shrink-0">
+                <img id="profileImage" src="" alt="Profile picture" class="h-28 w-28 rounded-md object-cover border border-gray-200 bg-gray-100">
+              </div>
+              <div class="flex-1">
+                <h2 id="entryName" class="text-xl font-semibold text-gray-900"></h2>
+                <div class="mt-2 text-sm text-gray-700 space-y-1">
+                  <p><span class="font-medium text-gray-600">Email:</span> <span id="entryEmail"></span></p>
+                  <p><span class="font-medium text-gray-600">Address:</span> <span id="entryAddress"></span></p>
+                </div>
+
+                <div class="mt-4 flex flex-wrap items-center gap-3">
+                  <span id="statusBadge" class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded">
+                    Payment: <span id="paymentStatus"></span>
+                  </span>
+                  <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
+                    ID: <span id="entryId"></span>
+                  </span>
+                  <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">
+                    Ref: <span id="referenceNumber"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="px-6 pb-6">
+              <div class="w-20 h-1 bg-blue-800 rounded mb-4"></div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div class="bg-gray-50 rounded p-4 border border-gray-100">
+                  <p class="text-gray-500">Created</p>
+                  <p id="createdAt" class="font-medium text-gray-900"></p>
+                </div>
+                <div class="bg-gray-50 rounded p-4 border border-gray-100">
+                  <p class="text-gray-500">Last Updated</p>
+                  <p id="updatedAt" class="font-medium text-gray-900"></p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Record Notes -->
+          <article class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div class="p-6">
+              <h3 class="text-lg font-semibold text-gray-900">Record Notes</h3>
+              <p class="mt-2 text-sm text-gray-600">
+                This record was automatically generated through the Demo Platform Admin Portal.
+                All information displayed is fictional and for demonstration purposes only.
+              </p>
+              <div id="remarksSection" class="mt-4 hidden">
+                <h4 class="text-sm font-medium text-gray-700">Administrative Remarks</h4>
+                <p id="remarks" class="text-sm text-gray-600 mt-1"></p>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- Right Section -->
+        <aside class="space-y-6">
+          <!-- Payment Details -->
+          <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div class="p-5">
+              <h3 class="text-base font-semibold text-gray-900">Payment Details</h3>
+              <div class="mt-3 text-sm">
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                  <span class="text-gray-600">Status</span>
+                  <span id="detailStatus" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                  <span class="text-gray-600">Transaction Status</span>
+                  <span id="transactionStatus" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                  <span class="text-gray-600">Amount</span>
+                  <span id="amount" class="font-medium text-blue-800"></span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                  <span class="text-gray-600">Fee</span>
+                  <span id="fee" class="font-medium text-gray-900"></span>
+                </div>
+                <div class="flex justify-between py-2">
+                  <span class="text-gray-600">Currency</span>
+                  <span id="currency" class="font-medium"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Meta Info -->
+          <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div class="p-5">
+              <h3 class="text-base font-semibold text-gray-900">Meta Information</h3>
+              <ul class="mt-3 text-sm space-y-2 text-gray-700">
+                <li><span class="text-gray-500">Entry ID:</span> <span id="metaId"></span></li>
+                <li><span class="text-gray-500">Reference:</span> <span id="metaRef"></span></li>
+                <li><span class="text-gray-500">Email:</span> <span id="metaEmail"></span></li>
+                <li><span class="text-gray-500">Address:</span> <span id="metaAddress"></span></li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-200 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-6 py-8 text-sm text-gray-600 text-center">
+      <p>&copy; <span id="footerYear"></span> Demo Platform. Independent demonstration application.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Get identifier from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const identifier = urlParams.get('slug') || urlParams.get('id');
+
+    // DOM Elements
+    const loadingState = document.getElementById('loadingState');
+    const errorState = document.getElementById('errorState');
+    const recordContent = document.getElementById('recordContent');
+
+    // Set current year
+    document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+    // Load record
+    async function loadRecord() {
+      if (!identifier) {
+        loadingState.classList.add('hidden');
+        errorState.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/entries/${encodeURIComponent(identifier)}`);
+        const data = await response.json();
+
+        loadingState.classList.add('hidden');
+
+        if (!data.entry) {
+          errorState.classList.remove('hidden');
+          return;
+        }
+
+        const entry = data.entry;
+
+        // Update page title
+        document.title = `${entry.name} | Demo Platform`;
+
+        // Update sub-header
+        document.getElementById('recordName').textContent = `Record details for ${entry.name}`;
+
+        // Update content
+        const imageUrl = entry.image_key ? `/api/images/${entry.image_key}` : '/images/default.svg';
+        document.getElementById('profileImage').src = imageUrl;
+        document.getElementById('entryName').textContent = entry.name;
+        document.getElementById('entryEmail').textContent = entry.email || 'No email';
+        document.getElementById('entryAddress').textContent = entry.address || 'No address';
+        document.getElementById('paymentStatus').textContent = entry.current_status || 'N/A';
+        document.getElementById('entryId').textContent = entry.id;
+        document.getElementById('referenceNumber').textContent = entry.reference_number;
+
+        // Status badge
+        const statusBadge = document.getElementById('statusBadge');
+        const status = (entry.current_status || '').toLowerCase();
+        if (status === 'paid') {
+          statusBadge.className = 'inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-green-100 text-green-800';
+        } else if (status === 'pending') {
+          statusBadge.className = 'inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-800';
+        } else if (status === 'overdue') {
+          statusBadge.className = 'inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-red-100 text-red-800';
+        } else {
+          statusBadge.className = 'inline-flex items-center px-2.5 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800';
+        }
+
+        // Dates
+        document.getElementById('createdAt').textContent = entry.created_at
+          ? new Date(entry.created_at).toLocaleString()
+          : '—';
+        document.getElementById('updatedAt').textContent = entry.updated_at
+          ? new Date(entry.updated_at).toLocaleString()
+          : '—';
+
+        // Remarks
+        if (entry.remarks) {
+          document.getElementById('remarksSection').classList.remove('hidden');
+          document.getElementById('remarks').textContent = entry.remarks;
+        }
+
+        // Payment details
+        document.getElementById('detailStatus').textContent = entry.current_status || 'N/A';
+        document.getElementById('transactionStatus').textContent = entry.transaction_status || 'N/A';
+        document.getElementById('amount').textContent = `$${parseFloat(entry.illustrative_amount).toFixed(2)}`;
+        document.getElementById('fee').textContent = `$${parseFloat(entry.illustrative_fee).toFixed(2)}`;
+        document.getElementById('currency').textContent = entry.currency || 'USD';
+
+        // Meta info
+        document.getElementById('metaId').textContent = entry.id;
+        document.getElementById('metaRef').textContent = entry.reference_number;
+        document.getElementById('metaEmail').textContent = entry.email || 'No email';
+        document.getElementById('metaAddress').textContent = entry.address || 'No address';
+
+        // Show content
+        recordContent.classList.remove('hidden');
+      } catch (error) {
+        console.error('Error loading record:', error);
+        loadingState.classList.add('hidden');
+        errorState.innerHTML = '<p class="font-medium">Error loading record. Please try again.</p>';
+        errorState.classList.remove('hidden');
+      }
+    }
+
+    // Initial load
+    loadRecord();
+  </script>
+</body>
+</html>

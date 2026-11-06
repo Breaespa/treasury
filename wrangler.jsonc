@@ -1,0 +1,33 @@
+{
+  "name": "demo-platform",
+  "compatibility_date": "2024-01-01",
+  "pages_build_output_dir": "public",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "demo-platform-db",
+      "database_id": "ae91a778-9eda-4ede-a6c3-3219cdeed9e6"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "demo-platform-assets"
+    }
+  ],
+  "vars": {
+    "SESSION_TIMEOUT": "3600"
+  },
+  "env": {
+    "production": {
+      "vars": {
+        "SESSION_TIMEOUT": "3600"
+      }
+    },
+    "preview": {
+      "vars": {
+        "SESSION_TIMEOUT": "3600"
+      }
+    }
+  }
+}

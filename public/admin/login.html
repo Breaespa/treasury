@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - Demo Platform</title>
+  <link rel="icon" href="/images/icon.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex items-center justify-center">
+  <div class="max-w-md w-full mx-4">
+    <!-- Logo and Title -->
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+        <span class="text-white font-bold text-3xl">DP</span>
+      </div>
+      <h1 class="text-2xl font-semibold text-gray-900">Admin Portal</h1>
+      <p class="text-sm text-gray-500 mt-1">Demo Platform Administration</p>
+    </div>
+
+    <!-- Login Form -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <form id="loginForm">
+        <div class="space-y-4">
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              required
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter your username"
+            >
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter your password"
+            >
+          </div>
+
+          <div id="errorMessage" class="hidden bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded text-sm"></div>
+
+          <button
+            type="submit"
+            id="submitBtn"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Sign In
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-6 text-center">
+        <a href="/" class="text-sm text-blue-600 hover:text-blue-800">Return to Homepage</a>
+      </div>
+    </div>
+
+    <!-- Setup Link (only shown if no admin exists) -->
+    <div id="setupSection" class="mt-6 text-center hidden">
+      <p class="text-sm text-gray-600 mb-2">No admin account exists yet.</p>
+      <a href="/admin/setup.html" class="text-sm text-blue-600 hover:text-blue-800 underline">Create initial admin account</a>
+    </div>
+
+    <!-- Footer -->
+    <p class="text-center text-xs text-gray-500 mt-8">
+      Demo Platform - Independent Demonstration Application
+    </p>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const errorMessage = document.getElementById('errorMessage');
+    const submitBtn = document.getElementById('submitBtn');
+    const setupSection = document.getElementById('setupSection');
+
+    // Check if admin exists
+    async function checkAdminExists() {
+      try {
+        const response = await fetch('/api/admin/session');
+        const data = await response.json();
+
+        if (data.authenticated) {
+          // Already logged in, redirect to dashboard
+          window.location.href = '/admin/dashboard.html';
+          return;
+        }
+
+        // Check if we can access setup (if admin doesn't exist)
+        const setupResponse = await fetch('/api/admin/setup', { method: 'POST' });
+        if (setupResponse.status === 400 && setupResponse.json.error === 'Admin user already exists') {
+          // Admin exists, hide setup link
+          setupSection.classList.add('hidden');
+        } else {
+          // Admin doesn't exist, show setup link
+          setupSection.classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error checking admin:', error);
+      }
+    }
+
+    // Handle login
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      errorMessage.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in...';
+
+      try {
+        const response = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Login successful, redirect to dashboard
+          window.location.href = '/admin/dashboard.html';
+        } else {
+          // Login failed
+          errorMessage.textContent = data.error || 'Login failed';
+          errorMessage.classList.remove('hidden');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In';
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+      }
+    });
+
+    // Initial check
+    checkAdminExists();
+  </script>
+</body>
+</html>
